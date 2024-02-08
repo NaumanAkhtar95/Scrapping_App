@@ -168,7 +168,7 @@ const Dashboard = () => {
             {rows && rows.length > 0 && rows.map((row, index) => {
               return (
                 <tr>
-                  <td style={{ border: "1px solid black" }}>{index+1}</td>
+                  <td style={{ border: "1px solid black" }}>{index + 1}</td>
                   <td style={{ border: "1px solid black" }}>{row["url"]}</td>
                   <td style={{ border: "1px solid black" }}>{<img width={50} src={row["product_image"]} />}</td>
                   <td style={{ border: "1px solid black" }}>{row["product_name"]}</td>
