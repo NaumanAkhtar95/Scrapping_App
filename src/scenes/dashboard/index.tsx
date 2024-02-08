@@ -25,6 +25,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState<boolean>(false)
   const [isDisable, setIsDisable] = useState<boolean>(false)
   const [isRunning, setIsRunning] = useState<boolean>(true)
+  const [message, setMessage] = useState<string>("");
 
   const jsonToCsv = (jsonData: any) => {
     let csv = '';
@@ -63,6 +64,7 @@ const Dashboard = () => {
         hrefs = [url];
       }
       var arr: any = [];
+      setMessage(`Scrapping ${1} / ${hrefs.length} urls'`)
       for (let index = 0; index < hrefs.length; index++) {
         if (isRunning) {
           setLoading(true)
@@ -94,6 +96,7 @@ const Dashboard = () => {
         } else {
           break;
         }
+        setMessage(`Scrapped: ${index + 1} / ${hrefs.length} urls'`)
         setLoading(false)
         setIsDisable(false)
       }
@@ -146,6 +149,9 @@ const Dashboard = () => {
             setIsDisable(false)
           }}
         >CANCEL</Button>
+      </Box>
+      <Box m="20px">
+        <Typography variant="h6">{message}</Typography>
       </Box>
       <Box m="20px" sx={{ overflow: "auto" }}>
         <table style={{ border: "1px solid black", width: "100%" }}>
