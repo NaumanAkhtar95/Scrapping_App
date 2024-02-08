@@ -1,8 +1,6 @@
 import { Box, Button, FormControl, IconButton, TextField, Typography, useTheme } from "@mui/material";
 import { tokens } from "../../theme";
-import { GridApi, GridCellValue, GridColDef } from "@mui/x-data-grid";
 import { ChangeEvent, useEffect, useState } from "react";
-import DataTable from "../../components/Datatable/Datatable";
 import { getData } from "../../components/general";
 import { showLoader } from "../../components/Shared/Loader";
 import { styled } from '@mui/material/styles';
@@ -24,35 +22,21 @@ const Dashboard = () => {
   const colors = tokens(theme.palette.mode);
   const [url, setUrl] = useState<string>("")
   const [rows, setRows] = useState<[]>([])
-  const [columns, setColumns] = useState<GridColDef[]>([])
   const [loading, setLoading] = useState<boolean>(false)
   const [isDisable, setIsDisable] = useState<boolean>(false)
   const [isRunning, setIsRunning] = useState<boolean>(true)
 
-  useEffect(() => {
-    optionsForDataTable()
-  }, [rows])
-
-  const optionsForDataTable = async () => {
-    try {
-      let cols: GridColDef[] = []
-      cols.push({ field: "url", headerName: "URL", width: 500 })
-      // cols.push({ field: "brand_name", headerName: "Brand Name", width: 200 })
-      // cols.push({ field: "product_image", headerName: "Image", width: 300 })
-      cols.push({
-        field: 'product_image',
-        headerName: 'Image',
-        width: 150,
-        editable: true,
-        renderCell: (params) => <img width={50} src={params.value} />,
-      }),
-        cols.push({ field: "product_name", headerName: "Product Name", width: 400 })
-      // cols.push({ field: "product_price", headerName: "Price", width: 150 })
-      cols.push({ field: "retailer_name", headerName: "Retailer", width: 200 })
-      setColumns(cols)
-    } catch (error) {
-      console.log(error)
-    }
+  const jsonToCsv = (jsonData: any) => {
+    let csv = '';
+    // Get the headers
+    let headers = Object.keys(jsonData[0]);
+    csv += headers.join(',') + '\n';
+    // Add the data
+    jsonData.forEach((jData: any) => {
+      let data = headers.map(header => JSON.stringify(jData[header])).join(','); // Add JSON.stringify statement
+      csv += data + '\n';
+    });
+    return csv;
   }
 
   const getScrapingData = async (urls?: []) => {
@@ -82,26 +66,29 @@ const Dashboard = () => {
       for (let index = 0; index < hrefs.length; index++) {
         if (isRunning) {
           setLoading(true)
+          setIsDisable(true)
           const u = hrefs[index];
           let data = {
             url: u
           }
           const res = await getData('api/scrap', data)
+          // console.log("data", data.url)
           res.data.map((data: any) => {
-            console.log(data.data)
+            // console.log(data.data)
             if (data && data.data) {
               const x = {
                 url: data.data.url,
-                brand_name: data.data.brand_name,
+                // brand_name: data.data.brand_name,
                 product_image: data.data.product_image,
                 product_name: data.data.product_name,
-                product_price: data.data.product_price,
+                // product_price: data.data.product_price,
                 retailer_name: data.data.retailer_name,
               }
-              console.log(x)
+              // console.log(x)
               arr = [...arr, x]
             }
           })
+          // console.log(arr)
           setRows(arr)
           setIsDisable(false)
         } else {
@@ -117,29 +104,6 @@ const Dashboard = () => {
       setIsDisable(false)
     }
   }
-
-  const fetchData = async () => {
-    try {
-      const response = await fetch('/path/to/your/urls.csv');
-      const csvData = await response.text();
-      console.log(csvData)
-      // Papa.parse(csvData, {
-      //   header: true,
-      //   dynamicTyping: true,
-      //   complete: (result) => {
-      //     // 'data' contains an array of objects with the CSV data
-      //     setUrls(result.data.map((row) => row.url));
-      //   },
-      //   error: (error) => {
-      //     console.error('Error parsing CSV:', error.message);
-      //   },
-      // });
-    } catch (error: any) {
-      console.error('Error fetching CSV:', error.message);
-    }
-  };
-
-
 
   return (
     <Box m="20px">
@@ -183,11 +147,88 @@ const Dashboard = () => {
           }}
         >CANCEL</Button>
       </Box>
-      <Box m="20px">
-        <DataTable columns={columns} rows={rows} loading={loading} />
+      <Box m="20px" sx={{ overflow: "auto" }}>
+        <table style={{ border: "1px solid black", width: "100%" }}>
+          <thead>
+            <tr>
+              <th style={{ border: "1px solid black" }}>#</th>
+              <th style={{ border: "1px solid black" }}>URL</th>
+              <th style={{ border: "1px solid black" }}>Image</th>
+              <th style={{ border: "1px solid black" }}>Product Name</th>
+              <th style={{ border: "1px solid black" }}>Retailer</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows && rows.length > 0 && rows.map((row, index) => {
+              return (
+                <tr>
+                  <td style={{ border: "1px solid black" }}>{index+1}</td>
+                  <td style={{ border: "1px solid black" }}>{row["url"]}</td>
+                  <td style={{ border: "1px solid black" }}>{<img width={50} src={row["product_image"]} />}</td>
+                  <td style={{ border: "1px solid black" }}>{row["product_name"]}</td>
+                  <td style={{ border: "1px solid black" }}>{row["retailer_name"]}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+        {/* <DataTable columns={columns} rows={rows} loading={loading} /> */}
+      </Box>
+      <Box m="20px" sx={{ display: "flex", flexDirection: "row", justifyContent: "right" }}>
+        <Button variant="contained"
+          onClick={() => {
+            let csvData = jsonToCsv(rows); // Add .items.data
+            // Create a CSV file and allow the user to download it
+            let blob = new Blob([csvData], { type: 'text/csv' });
+            let url = window.URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.href = url;
+            a.download = 'data.csv';
+            document.body.appendChild(a);
+            a.click();
+          }}
+        >Export</Button>
       </Box>
     </Box>
   );
 };
 
 export default Dashboard;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// function downloadJSONAsCSV(endpoint) {
+//   // Fetch JSON data from the endpoint
+//   fetch(endpoint)
+//       .then(response => response.json())
+//       .then(jsonData => {
+//           // Convert JSON data to CSV
+//           let csvData = jsonToCsv(jsonData.items.data); // Add .items.data
+//           // Create a CSV file and allow the user to download it
+//           let blob = new Blob([csvData], { type: 'text/csv' });
+//           let url = window.URL.createObjectURL(blob);
+//           let a = document.createElement('a');
+//           a.href = url;
+//           a.download = 'data.csv';
+//           document.body.appendChild(a);
+//           a.click();
+//       })
+//       .catch(error => console.error(error));
+// }

@@ -5,7 +5,6 @@ import { ColorModeContext, tokens, useMode } from "./theme";
 import Dashboard from "./scenes/dashboard";
 import { getData } from "./components/general";
 import LoadingDiv from "./components/Shared/LoadingDiv";
-import { Filters } from "./components/general_models";
 
 const routeMap: Record<string, string> = {
   login: "./auth/Login",
